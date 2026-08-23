@@ -1,0 +1,984 @@
+<title>Pomodoro Timer</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600&display=swap">
+<style>
+  :root {
+    --bg: #FAF9F7;
+    --bg-surface: #F0EFEC;
+    --dial-face: #FFFFFF;
+    --text-primary: #2C2C2E;
+    --text-secondary: #8E8E93;
+    --focus: #D94F3B;
+    --focus-soft: rgba(217, 79, 59, 0.10);
+    --short-break: #3D9A6E;
+    --short-break-soft: rgba(61, 154, 110, 0.10);
+    --long-break: #5271B8;
+    --long-break-soft: rgba(82, 113, 184, 0.10);
+    --ring-track: rgba(0, 0, 0, 0.03);
+    --control-bg: rgba(0, 0, 0, 0.05);
+    --control-hover: rgba(0, 0, 0, 0.08);
+    --divider: rgba(0, 0, 0, 0.06);
+    --session-badge-bg: rgba(0,0,0,0.03);
+    --knob-bg: #F5F5F3;
+    --knob-shadow: rgba(0,0,0,0.12);
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #1C1C1E;
+      --bg-surface: #2C2C2E;
+      --dial-face: #2C2C2E;
+      --text-primary: #E5E5EA;
+      --text-secondary: #8E8E93;
+      --focus: #E8695A;
+      --focus-soft: rgba(232, 105, 90, 0.12);
+      --short-break: #5ABF8A;
+      --short-break-soft: rgba(90, 191, 138, 0.12);
+      --long-break: #7B9AD6;
+      --long-break-soft: rgba(123, 154, 214, 0.12);
+      --ring-track: rgba(255, 255, 255, 0.05);
+      --control-bg: rgba(255, 255, 255, 0.08);
+      --control-hover: rgba(255, 255, 255, 0.12);
+      --divider: rgba(255, 255, 255, 0.08);
+      --session-badge-bg: rgba(255,255,255,0.06);
+      --knob-bg: #3A3A3C;
+      --knob-shadow: rgba(0,0,0,0.3);
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #1C1C1E;
+    --bg-surface: #2C2C2E;
+    --dial-face: #2C2C2E;
+    --text-primary: #E5E5EA;
+    --text-secondary: #8E8E93;
+    --focus: #E8695A;
+    --focus-soft: rgba(232, 105, 90, 0.12);
+    --short-break: #5ABF8A;
+    --short-break-soft: rgba(90, 191, 138, 0.12);
+    --long-break: #7B9AD6;
+    --long-break-soft: rgba(123, 154, 214, 0.12);
+    --ring-track: rgba(255, 255, 255, 0.05);
+    --control-bg: rgba(255, 255, 255, 0.08);
+    --control-hover: rgba(255, 255, 255, 0.12);
+    --divider: rgba(255, 255, 255, 0.08);
+    --session-badge-bg: rgba(255,255,255,0.06);
+    --knob-bg: #3A3A3C;
+    --knob-shadow: rgba(0,0,0,0.3);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text-primary);
+    font-family: 'Noto Sans KR', -apple-system, sans-serif;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100dvh;
+    -webkit-user-select: none;
+    user-select: none;
+    overflow-x: hidden;
+  }
+
+  .container {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    max-width: 1200px;
+    min-height: 100dvh;
+    padding: 40px 60px;
+    gap: 0;
+  }
+
+  .info-left {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 24px;
+    padding-right: 80px;
+  }
+
+  .phase-label {
+    font-size: 28px;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    transition: color 0.4s ease;
+  }
+
+  .indicators {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+  }
+
+  .dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    transition: all 0.3s ease;
+  }
+
+  .dot.empty {
+    opacity: 0.2;
+  }
+
+  .session-badge {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 16px;
+    border-radius: 20px;
+    background: var(--session-badge-bg);
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text-secondary);
+  }
+
+  .session-badge svg {
+    width: 16px;
+    height: 16px;
+  }
+
+  .character-placeholder {
+    width: 120px;
+    height: 120px;
+    border-radius: 24px;
+    border: 2px dashed var(--text-secondary);
+    opacity: 0.3;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    gap: 6px;
+    color: var(--text-secondary);
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.02em;
+  }
+
+  .character-placeholder svg {
+    width: 32px;
+    height: 32px;
+    fill: currentColor;
+    opacity: 0.6;
+  }
+
+  .sound-controls {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .btn-sound-toggle {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: var(--control-bg);
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-secondary);
+    transition: all 0.2s ease;
+    flex-shrink: 0;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .btn-sound-toggle:hover { background: var(--control-hover); }
+  .btn-sound-toggle:active { transform: scale(0.94); }
+  .btn-sound-toggle svg {
+    width: 18px;
+    height: 18px;
+    fill: currentColor;
+  }
+  .btn-sound-toggle.muted {
+    opacity: 0.4;
+  }
+
+  .sound-chips {
+    display: flex;
+    gap: 6px;
+  }
+
+  .sound-chip {
+    padding: 5px 12px;
+    border-radius: 14px;
+    border: 1px solid var(--divider);
+    background: transparent;
+    color: var(--text-secondary);
+    font-family: 'Noto Sans KR', -apple-system, sans-serif;
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .sound-chip:hover {
+    background: var(--control-bg);
+  }
+  .sound-chip.active {
+    background: var(--control-bg);
+    color: var(--text-primary);
+    border-color: var(--text-secondary);
+  }
+
+  .timer-center {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 24px;
+  }
+
+  .timer-wrap {
+    position: relative;
+    width: 380px;
+    height: 380px;
+  }
+
+  .timer-wrap {
+    cursor: grab;
+    touch-action: none;
+  }
+
+  .timer-wrap:active {
+    cursor: grabbing;
+  }
+
+  .timer-wrap svg {
+    width: 100%;
+    height: 100%;
+  }
+
+  .dial-face {
+    fill: var(--dial-face);
+  }
+
+  .pie-bg {
+    fill: var(--ring-track);
+  }
+
+  .pie-fill {
+    transition: fill 0.4s ease;
+  }
+
+  .pie-overtime {
+    opacity: 0.35;
+    transition: fill 0.4s ease;
+  }
+
+  .tick {
+    stroke: var(--text-secondary);
+    stroke-linecap: round;
+  }
+
+  .tick-minor {
+    stroke-width: 0.8;
+    opacity: 0.25;
+  }
+
+  .tick-major {
+    stroke-width: 1.5;
+    opacity: 0.45;
+  }
+
+  .tick-label {
+    fill: var(--text-secondary);
+    font-family: -apple-system, 'SF Pro Display', system-ui, sans-serif;
+    font-weight: 500;
+    font-size: 9px;
+    text-anchor: middle;
+    dominant-baseline: central;
+  }
+
+  .center-knob {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    border: none;
+    background: var(--knob-bg);
+    box-shadow: 0 2px 8px var(--knob-shadow);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    -webkit-tap-highlight-color: transparent;
+    z-index: 2;
+  }
+
+  .center-knob:active { transform: translate(-50%, -50%) scale(0.92); }
+  .center-knob:focus-visible { outline: 2px solid var(--text-primary); outline-offset: 2px; }
+
+  .knob-time {
+    font-family: -apple-system, 'SF Pro Display', system-ui, sans-serif;
+    font-weight: 600;
+    font-size: 16px;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.01em;
+    color: var(--text-primary);
+    line-height: 1;
+    transition: color 0.4s ease;
+  }
+
+  .knob-icon {
+    display: none;
+  }
+
+  .center-knob svg {
+    width: 24px;
+    height: 24px;
+    fill: var(--text-primary);
+    transition: fill 0.4s ease;
+  }
+
+  .sub-controls {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 16px;
+  }
+
+  .btn {
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    -webkit-tap-highlight-color: transparent;
+    font-family: inherit;
+  }
+
+  .btn:focus-visible {
+    outline: 2px solid var(--text-primary);
+    outline-offset: 2px;
+  }
+
+  .btn-sub {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background: var(--control-bg);
+    color: var(--text-secondary);
+  }
+  .btn-sub:hover { background: var(--control-hover); }
+  .btn-sub:active { transform: scale(0.94); }
+
+  .btn-sub svg {
+    width: 18px;
+    height: 18px;
+    fill: currentColor;
+  }
+
+  .demo-toggle {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 14px;
+    border-radius: 8px;
+    background: var(--control-bg);
+    border: 1px solid var(--divider);
+    color: var(--text-secondary);
+    font-family: 'Noto Sans KR', sans-serif;
+    font-size: 12px;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .demo-toggle:hover { background: var(--control-hover); }
+  .demo-toggle.active { color: var(--focus); }
+
+  /* --- Portrait / iPhone --- */
+  @media (max-aspect-ratio: 1/1), (max-width: 700px) {
+    .container {
+      flex-direction: column;
+      gap: 16px;
+      padding: 40px 24px 32px;
+      min-height: 100dvh;
+      justify-content: center;
+    }
+
+    .info-left {
+      align-items: center;
+      padding-right: 0;
+      gap: 10px;
+    }
+
+    .character-placeholder {
+      width: 64px;
+      height: 64px;
+      border-radius: 14px;
+    }
+
+    .character-placeholder svg {
+      width: 20px;
+      height: 20px;
+    }
+
+    .timer-center { gap: 16px; }
+
+    .timer-wrap {
+      width: 280px;
+      height: 280px;
+    }
+
+    .center-knob {
+      width: 52px;
+      height: 52px;
+    }
+
+    .center-knob svg {
+      width: 20px;
+      height: 20px;
+    }
+
+    .knob-time {
+      font-size: 13px;
+    }
+
+    .phase-label { font-size: 20px; }
+
+    .sound-controls { gap: 8px; }
+    .btn-sound-toggle { width: 32px; height: 32px; }
+    .btn-sound-toggle svg { width: 16px; height: 16px; }
+    .sound-chip { font-size: 11px; padding: 4px 10px; }
+
+    .btn-sub {
+      width: 40px;
+      height: 40px;
+    }
+
+    .btn-sub svg {
+      width: 16px;
+      height: 16px;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      transition-duration: 0.01ms !important;
+    }
+  }
+</style>
+
+<div class="container">
+  <div class="info-left">
+    <div class="phase-label" id="phaseLabel">집중</div>
+    <div class="indicators" id="indicators"></div>
+    <div class="session-badge" id="sessionBadge">
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z"/></svg>
+      <span id="sessionText">오늘 0세션 완료</span>
+    </div>
+    <div class="character-placeholder">
+      <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 4c1.93 0 3.5 1.57 3.5 3.5S13.93 13 12 13s-3.5-1.57-3.5-3.5S10.07 6 12 6zm0 14c-2.73 0-5.14-1.39-6.56-3.5.04-2.17 4.37-3.36 6.56-3.36s6.52 1.19 6.56 3.36A7.987 7.987 0 0112 20z"/></svg>
+      캐릭터 영역
+    </div>
+    <div class="sound-controls">
+      <button class="btn btn-sound-toggle" id="btnMute" aria-label="사운드 토글">
+        <svg viewBox="0 0 24 24" id="soundIcon"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg>
+      </button>
+      <div class="sound-chips" id="soundChips">
+        <button class="sound-chip active" data-sound="pink">부드러운</button>
+        <button class="sound-chip" data-sound="brown">깊은</button>
+        <button class="sound-chip" data-sound="rain">빗소리</button>
+      </div>
+    </div>
+    <button class="btn btn-sub" id="btnReset" aria-label="리셋">
+      <svg viewBox="0 0 24 24"><path d="M17.65 6.35A7.958 7.958 0 0012 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08A5.99 5.99 0 0112 18c-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></svg>
+    </button>
+  </div>
+
+  <div class="timer-center">
+    <div class="timer-wrap">
+      <svg viewBox="-20 -20 240 240" id="pieSvg">
+        <circle class="dial-face" cx="100" cy="100" r="96"/>
+        <path class="pie-fill" id="pieFill" d=""/>
+        <path class="pie-overtime" id="pieOvertime" d=""/>
+        <g id="tickMarks"></g>
+      </svg>
+      <button class="center-knob" id="btnPlay" aria-label="시작">
+        <span class="knob-time" id="knobTime">25:00</span>
+        <svg class="knob-icon" viewBox="0 0 24 24" id="playIcon"><path d="M8 5v14l11-7z"/></svg>
+      </button>
+    </div>
+
+  </div>
+</div>
+
+<button class="demo-toggle" id="demoToggle">
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M13 2.05v2.02c3.95.49 7 3.85 7 7.93 0 1.45-.39 2.81-1.07 3.98l1.46 1.46A9.938 9.938 0 0022 12c0-5.18-3.95-9.45-9-9.95zM12 4c-4.42 0-8 3.58-8 8s3.58 8 8 8 8-3.58 8-8-3.58-8-8-8zm-1 3v6l5.25 3.15.75-1.23-4.5-2.67V7h-1.5z"/></svg>
+  데모 모드 (5초)
+</button>
+
+<script>
+const SESSIONS_BEFORE_LONG = 4;
+const PIE_CX = 100;
+const PIE_CY = 100;
+const PIE_R = 88;
+
+const phases = {
+  focus:      { label: '집중',     duration: 25 * 60, demoDuration: 5 },
+  shortBreak: { label: '짧은 휴식', duration: 5 * 60,  demoDuration: 3 },
+  longBreak:  { label: '긴 휴식',  duration: 15 * 60, demoDuration: 4 },
+};
+
+let currentPhase = 'focus';
+let remaining = phases.focus.duration;
+let overtime = 0;
+let isOvertime = false;
+let running = false;
+let completedSessions = 0;
+let demoMode = false;
+let interval = null;
+let lastTick = null;
+
+const $label      = document.getElementById('phaseLabel');
+const $pieFill    = document.getElementById('pieFill');
+const $pieOT      = document.getElementById('pieOvertime');
+const $knobTime   = document.getElementById('knobTime');
+const $btnPlay    = document.getElementById('btnPlay');
+const $playIcon   = document.getElementById('playIcon');
+const $btnReset   = document.getElementById('btnReset');
+const $indicators = document.getElementById('indicators');
+const $sessionText  = document.getElementById('sessionText');
+const $demoToggle   = document.getElementById('demoToggle');
+const $sessionBadge = document.getElementById('sessionBadge');
+
+// --- Ambient Sound (Web Audio API) ---
+let audioCtx = null;
+let noiseNode = null;
+let gainNode = null;
+let filterNode = null;
+let muted = false;
+let selectedSound = 'pink';
+
+const $btnMute = document.getElementById('btnMute');
+const $soundIcon = document.getElementById('soundIcon');
+const $soundChips = document.getElementById('soundChips');
+
+const soundConfigs = {
+  pink:  { filterFreq: 400, filterQ: 1, gain: 0.5 },
+  brown: { filterFreq: 200, filterQ: 0.7, gain: 0.55 },
+  rain:  { filterFreq: 800, filterQ: 2.5, gain: 0.35 },
+};
+
+function initAudio() {
+  if (audioCtx) return;
+  audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+}
+
+function createPinkNoise() {
+  const bufferSize = audioCtx.sampleRate * 2;
+  const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+  const data = buffer.getChannelData(0);
+  let b0=0, b1=0, b2=0, b3=0, b4=0, b5=0, b6=0;
+  for (let i = 0; i < bufferSize; i++) {
+    const white = Math.random() * 2 - 1;
+    b0 = 0.99886*b0 + white*0.0555179;
+    b1 = 0.99332*b1 + white*0.0750759;
+    b2 = 0.96900*b2 + white*0.1538520;
+    b3 = 0.86650*b3 + white*0.3104856;
+    b4 = 0.55000*b4 + white*0.5329522;
+    b5 = -0.7616*b5 - white*0.0168980;
+    data[i] = (b0+b1+b2+b3+b4+b5+b6+white*0.5362) * 0.04;
+    b6 = white * 0.115926;
+  }
+  return buffer;
+}
+
+function createBrownNoise() {
+  const bufferSize = audioCtx.sampleRate * 2;
+  const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+  const data = buffer.getChannelData(0);
+  let last = 0;
+  for (let i = 0; i < bufferSize; i++) {
+    const white = Math.random() * 2 - 1;
+    last = (last + 0.02 * white) / 1.02;
+    data[i] = last * 3.5;
+  }
+  return buffer;
+}
+
+function createRainNoise() {
+  const bufferSize = audioCtx.sampleRate * 2;
+  const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+  const data = buffer.getChannelData(0);
+  let b0=0, b1=0, b2=0, b3=0, b4=0, b5=0, b6=0;
+  for (let i = 0; i < bufferSize; i++) {
+    const white = Math.random() * 2 - 1;
+    b0 = 0.99886*b0 + white*0.0555179;
+    b1 = 0.99332*b1 + white*0.0750759;
+    b2 = 0.96900*b2 + white*0.1538520;
+    b3 = 0.86650*b3 + white*0.3104856;
+    b4 = 0.55000*b4 + white*0.5329522;
+    b5 = -0.7616*b5 - white*0.0168980;
+    const pink = (b0+b1+b2+b3+b4+b5+b6+white*0.5362) * 0.04;
+    b6 = white * 0.115926;
+    const burst = Math.random() < 0.003 ? (Math.random() * 0.8) : 0;
+    data[i] = pink + burst * white * 0.5;
+  }
+  return buffer;
+}
+
+function createNoiseBuffer() {
+  switch (selectedSound) {
+    case 'brown': return createBrownNoise();
+    case 'rain':  return createRainNoise();
+    default:      return createPinkNoise();
+  }
+}
+
+function startAmbient() {
+  if (muted) return;
+  initAudio();
+  if (audioCtx.state === 'suspended') audioCtx.resume();
+  stopAmbient(false);
+
+  const cfg = soundConfigs[selectedSound];
+  const buffer = createNoiseBuffer();
+  noiseNode = audioCtx.createBufferSource();
+  noiseNode.buffer = buffer;
+  noiseNode.loop = true;
+
+  filterNode = audioCtx.createBiquadFilter();
+  filterNode.type = 'lowpass';
+  filterNode.frequency.value = cfg.filterFreq;
+  filterNode.Q.value = cfg.filterQ;
+
+  gainNode = audioCtx.createGain();
+  gainNode.gain.setValueAtTime(0, audioCtx.currentTime);
+  gainNode.gain.linearRampToValueAtTime(cfg.gain, audioCtx.currentTime + 1);
+
+  noiseNode.connect(filterNode);
+  filterNode.connect(gainNode);
+  gainNode.connect(audioCtx.destination);
+  noiseNode.start();
+}
+
+function fadeOutAmbient(duration) {
+  if (!gainNode || !audioCtx) return;
+  const fadeTime = duration || 3;
+  gainNode.gain.setValueAtTime(gainNode.gain.value, audioCtx.currentTime);
+  gainNode.gain.linearRampToValueAtTime(0, audioCtx.currentTime + fadeTime);
+  setTimeout(() => stopAmbient(false), fadeTime * 1000 + 100);
+}
+
+function stopAmbient(immediate) {
+  if (noiseNode) {
+    try { noiseNode.stop(); } catch(e) {}
+    noiseNode.disconnect();
+    noiseNode = null;
+  }
+  if (filterNode) { filterNode.disconnect(); filterNode = null; }
+  if (gainNode) { gainNode.disconnect(); gainNode = null; }
+}
+
+function updateMuteUI() {
+  $btnMute.classList.toggle('muted', muted);
+  $soundIcon.innerHTML = muted
+    ? '<path d="M16.5 12c0-1.77-1.02-3.29-2.5-4.03v2.21l2.45 2.45c.03-.2.05-.41.05-.63zm2.5 0c0 .94-.2 1.82-.54 2.64l1.51 1.51A8.796 8.796 0 0021 12c0-4.28-2.99-7.86-7-8.77v2.06c2.89.86 5 3.54 5 6.71zM4.27 3L3 4.27 7.73 9H3v6h4l5 5v-6.73l4.25 4.25c-.67.52-1.42.93-2.25 1.18v2.06a8.99 8.99 0 003.69-1.81L19.73 21 21 19.73l-9-9L4.27 3zM12 4L9.91 6.09 12 8.18V4z"/>'
+    : '<path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/>';
+}
+
+$btnMute.addEventListener('click', () => {
+  muted = !muted;
+  updateMuteUI();
+  if (muted) {
+    stopAmbient(true);
+  } else if (running && !isOvertime) {
+    startAmbient();
+  }
+});
+
+$soundChips.addEventListener('click', (e) => {
+  const chip = e.target.closest('.sound-chip');
+  if (!chip) return;
+  selectedSound = chip.dataset.sound;
+  $soundChips.querySelectorAll('.sound-chip').forEach(c => c.classList.remove('active'));
+  chip.classList.add('active');
+  if (running && !muted && !isOvertime) {
+    startAmbient();
+  }
+});
+
+// --- Pie paths ---
+function getColor(phase) {
+  const style = getComputedStyle(document.documentElement);
+  switch(phase) {
+    case 'focus':      return style.getPropertyValue('--focus').trim();
+    case 'shortBreak': return style.getPropertyValue('--short-break').trim();
+    case 'longBreak':  return style.getPropertyValue('--long-break').trim();
+  }
+}
+
+function getDuration(phase) {
+  return demoMode ? phases[phase].demoDuration : phases[phase].duration;
+}
+
+function formatTime(s) {
+  const total = Math.ceil(Math.abs(s));
+  const m = Math.floor(total / 60);
+  const sec = total % 60;
+  return `${String(m).padStart(2,'0')}:${String(sec).padStart(2,'0')}`;
+}
+
+function piePath(fraction) {
+  if (fraction <= 0) return '';
+  if (fraction >= 1) return `M${PIE_CX},${PIE_CY} m-${PIE_R},0 a${PIE_R},${PIE_R} 0 1,1 ${PIE_R*2},0 a${PIE_R},${PIE_R} 0 1,1 -${PIE_R*2},0`;
+  const angle = fraction * 2 * Math.PI;
+  const x = PIE_CX + PIE_R * Math.sin(angle);
+  const y = PIE_CY - PIE_R * Math.cos(angle);
+  const large = fraction > 0.5 ? 1 : 0;
+  return `M${PIE_CX},${PIE_CY} L${PIE_CX},${PIE_CY - PIE_R} A${PIE_R},${PIE_R} 0 ${large},1 ${x},${y} Z`;
+}
+
+function piePathCCW(fraction) {
+  if (fraction <= 0) return '';
+  if (fraction >= 1) return `M${PIE_CX},${PIE_CY} m-${PIE_R},0 a${PIE_R},${PIE_R} 0 1,1 ${PIE_R*2},0 a${PIE_R},${PIE_R} 0 1,1 -${PIE_R*2},0`;
+  const angle = fraction * 2 * Math.PI;
+  const x = PIE_CX - PIE_R * Math.sin(angle);
+  const y = PIE_CY - PIE_R * Math.cos(angle);
+  const large = fraction > 0.5 ? 1 : 0;
+  return `M${PIE_CX},${PIE_CY} L${PIE_CX},${PIE_CY - PIE_R} A${PIE_R},${PIE_R} 0 ${large},0 ${x},${y} Z`;
+}
+
+// --- Render ---
+function render() {
+  const color = getColor(currentPhase);
+  const totalCircle = demoMode ? 12 : 60 * 60;
+
+  $label.textContent = phases[currentPhase].label;
+  $label.style.color = color;
+
+  if (isOvertime) {
+    $pieFill.setAttribute('d', '');
+    const otFraction = Math.min(overtime / totalCircle, 1);
+    $pieOT.setAttribute('d', piePathCCW(otFraction));
+    $pieOT.style.fill = color;
+  } else {
+    const progress = remaining / totalCircle;
+    $pieFill.setAttribute('d', piePath(progress));
+    $pieFill.style.fill = color;
+    $pieOT.setAttribute('d', '');
+  }
+
+  if (isOvertime) {
+    $knobTime.textContent = '+' + formatTime(overtime);
+  } else {
+    $knobTime.textContent = formatTime(remaining);
+  }
+  $knobTime.style.color = color;
+
+  $sessionBadge.querySelector('svg').style.fill = completedSessions > 0 ? getColor('shortBreak') : '';
+  $sessionText.textContent = `오늘 ${completedSessions}세션 완료`;
+
+  renderIndicators();
+}
+
+function renderIndicators() {
+  const color = getColor(currentPhase);
+  $indicators.innerHTML = '';
+  for (let i = 0; i < SESSIONS_BEFORE_LONG; i++) {
+    const dot = document.createElement('div');
+    dot.className = 'dot' + (i < completedSessions % SESSIONS_BEFORE_LONG ? '' : ' empty');
+    dot.style.background = color;
+    $indicators.appendChild(dot);
+  }
+}
+
+// --- Timer ---
+function start() {
+  if (running) return;
+  running = true;
+  lastTick = performance.now();
+  interval = requestAnimationFrame(tick);
+  startAmbient();
+  render();
+}
+
+function pause() {
+  running = false;
+  lastTick = null;
+  if (interval) cancelAnimationFrame(interval);
+  interval = null;
+  stopAmbient(true);
+  render();
+}
+
+function tick(now) {
+  if (!running) return;
+  if (lastTick) {
+    const elapsed = (now - lastTick) / 1000;
+    if (isOvertime) {
+      overtime += elapsed;
+    } else {
+      remaining -= elapsed;
+      if (remaining <= 0) {
+        remaining = 0;
+        enterOvertime();
+      }
+    }
+  }
+  lastTick = now;
+  render();
+  interval = requestAnimationFrame(tick);
+}
+
+function enterOvertime() {
+  isOvertime = true;
+  overtime = 0;
+  if (currentPhase === 'focus') completedSessions++;
+  fadeOutAmbient(demoMode ? 1.5 : 3);
+}
+
+function advancePhase() {
+  if (currentPhase === 'focus') {
+    currentPhase = (completedSessions % SESSIONS_BEFORE_LONG === 0) ? 'longBreak' : 'shortBreak';
+  } else {
+    currentPhase = 'focus';
+  }
+  remaining = getDuration(currentPhase);
+  overtime = 0;
+  isOvertime = false;
+}
+
+function reset() {
+  const wasRunning = running;
+  pause();
+  if (isOvertime) {
+    advancePhase();
+  } else {
+    remaining = getDuration(currentPhase);
+  }
+  overtime = 0;
+  isOvertime = false;
+  render();
+}
+
+$btnPlay.addEventListener('click', () => {
+  if (running) {
+    pause();
+  } else {
+    if (isOvertime) {
+      advancePhase();
+    }
+    start();
+  }
+});
+$btnReset.addEventListener('click', reset);
+
+$demoToggle.addEventListener('click', () => {
+  demoMode = !demoMode;
+  $demoToggle.classList.toggle('active', demoMode);
+  pause();
+  remaining = getDuration(currentPhase);
+  overtime = 0;
+  isOvertime = false;
+  render();
+});
+
+// --- Drag to set time ---
+let dragging = false;
+const $pieSvg = document.getElementById('pieSvg');
+const $timerWrap = document.querySelector('.timer-wrap');
+
+function getAngleFromPointer(e) {
+  const rect = $timerWrap.getBoundingClientRect();
+  const cx = rect.left + rect.width / 2;
+  const cy = rect.top + rect.height / 2;
+  const px = e.touches ? e.touches[0].clientX : e.clientX;
+  const py = e.touches ? e.touches[0].clientY : e.clientY;
+  let angle = Math.atan2(px - cx, -(py - cy));
+  if (angle < 0) angle += 2 * Math.PI;
+  return angle;
+}
+
+function angleToSeconds(angle) {
+  const fraction = angle / (2 * Math.PI);
+  const totalCircle = demoMode ? 12 : 60 * 60;
+  const seconds = fraction * totalCircle;
+  if (demoMode) return Math.round(seconds);
+  return Math.round(seconds / 60) * 60;
+}
+
+function onDragStart(e) {
+  if (running) return;
+  if (e.target.closest('.center-knob')) return;
+  dragging = true;
+  isOvertime = false;
+  overtime = 0;
+  onDragMove(e);
+  e.preventDefault();
+}
+
+function onDragMove(e) {
+  if (!dragging) return;
+  const angle = getAngleFromPointer(e);
+  remaining = angleToSeconds(angle);
+  if (remaining <= 0) remaining = demoMode ? 1 : 60;
+  render();
+  e.preventDefault();
+}
+
+function onDragEnd() {
+  dragging = false;
+}
+
+$timerWrap.addEventListener('mousedown', onDragStart);
+$timerWrap.addEventListener('touchstart', onDragStart, { passive: false });
+window.addEventListener('mousemove', onDragMove);
+window.addEventListener('touchmove', onDragMove, { passive: false });
+window.addEventListener('mouseup', onDragEnd);
+window.addEventListener('touchend', onDragEnd);
+
+function buildTickMarks() {
+  const $ticks = document.getElementById('tickMarks');
+  const ns = 'http://www.w3.org/2000/svg';
+  const cx = 100, cy = 100;
+  const outerR = 94;
+  const tickOuterR = outerR;
+
+  for (let i = 0; i < 60; i++) {
+    const angle = (i / 60) * 2 * Math.PI - Math.PI / 2;
+    const isMajor = i % 5 === 0;
+    const tickLen = isMajor ? 10 : 5;
+    const halfTick = tickLen / 2;
+    const x1 = cx + (outerR + halfTick) * Math.cos(angle);
+    const y1 = cy + (outerR + halfTick) * Math.sin(angle);
+    const x2 = cx + (outerR - halfTick) * Math.cos(angle);
+    const y2 = cy + (outerR - halfTick) * Math.sin(angle);
+
+    const line = document.createElementNS(ns, 'line');
+    line.setAttribute('x1', x1);
+    line.setAttribute('y1', y1);
+    line.setAttribute('x2', x2);
+    line.setAttribute('y2', y2);
+    line.setAttribute('class', 'tick ' + (isMajor ? 'tick-major' : 'tick-minor'));
+    $ticks.appendChild(line);
+
+    if (isMajor) {
+      const labelR = outerR + 16;
+      const lx = cx + labelR * Math.cos(angle);
+      const ly = cy + labelR * Math.sin(angle);
+      const text = document.createElementNS(ns, 'text');
+      text.setAttribute('x', lx);
+      text.setAttribute('y', ly);
+      text.setAttribute('class', 'tick-label');
+      text.textContent = i === 0 ? '0' : String(i);
+      $ticks.appendChild(text);
+    }
+  }
+}
+
+buildTickMarks();
+render();
+</script>
