@@ -1,9 +1,10 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-  <rect width="512" height="512" rx="112" fill="#2f7d6d"/>
-  <!-- 집 -->
-  <path d="M256 104 92 236h44v160a16 16 0 0 0 16 16h208a16 16 0 0 0 16-16V236h44Z" fill="#f6f4ef"/>
-  <!-- 체크 -->
-  <path d="m186 306 50 50 94-104" fill="none" stroke="#2f7d6d" stroke-width="36" stroke-linecap="round" stroke-linejoin="round"/>
-  <!-- 반짝 -->
-  <path d="M400 92c6 24 14 32 38 38-24 6-32 14-38 38-6-24-14-32-38-38 24-6 32-14 38-38Z" fill="#ffd66b"/>
+  <rect width="512" height="512" rx="112" fill="#ffffff"/>
+  <!-- 집 (선) -->
+  <path d="M120 238 256 124l136 114v146a24 24 0 0 1-24 24H144a24 24 0 0 1-24-24Z" fill="none" stroke="#191b1f" stroke-width="28" stroke-linejoin="round"/>
+  <!-- 체크 (코랄) -->
+  <path d="m194 300 44 44 84-92" fill="none" stroke="#ff6f61" stroke-width="32" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- 반짝 (옐로우) · 물방울 점 (하늘) -->
+  <path d="M398 82c5 20 12 27 32 32-20 5-27 12-32 32-5-20-12-27-32-32 20-5 27-12 32-32Z" fill="#ffc83d"/>
+  <circle cx="436" cy="190" r="14" fill="#4fb3f6"/>
 </svg>

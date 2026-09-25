@@ -185,35 +185,51 @@ function visible(tasks) {
   return state.mineOnly ? tasks.filter((t) => !t.assignee || t.assignee === state.me) : tasks;
 }
 
-function taskItem(task, today) {
+// 가족 구성원마다 포인트 색 하나씩 (코랄 → 하늘 → 옐로우 순서로 반복)
+const MEMBER_COLORS = ['coral', 'sky', 'yellow'];
+function memberColor(name) {
+  let i = state.family.members.indexOf(name);
+  if (i < 0) i = [...String(name)].reduce((sum, c) => sum + c.charCodeAt(0), 0);
+  return MEMBER_COLORS[i % MEMBER_COLORS.length];
+}
+const person = (name) => `<span class="person" data-color="${memberColor(name)}"><i aria-hidden="true"></i>${esc(name)}</span>`;
+
+function taskItem(task, today, { showArea = true } = {}) {
   const overdue = !task.done && task.due < today;
   const meta = [
-    `<span>${esc(task.area)}</span>`,
-    task.repeat !== 'none' ? `<span>🔁 ${esc(REPEATS[task.repeat] || '')}</span>` : '',
-    task.assignee ? `<span class="who">${esc(task.assignee)}</span>` : '',
     task.done
-      ? `<span>✓ ${esc(task.lastDoneBy || '')}</span>`
-      : `<span class="${overdue ? 'overdue' : ''}">${esc(dueLabel(task.due, today))}</span>`,
-  ].filter(Boolean).join('');
+      ? `<span>완료 · ${esc(task.lastDoneBy || '')}</span>`
+      : `<span class="due ${overdue ? 'overdue' : ''}">${esc(dueLabel(task.due, today))}</span>`,
+    showArea ? `<span>${esc(task.area)}</span>` : '',
+    task.repeat !== 'none' ? `<span>${esc(REPEATS[task.repeat] || '')}</span>` : '',
+  ].filter(Boolean).join('<span class="dot" aria-hidden="true">·</span>');
   return `
     <li class="task ${task.done ? 'is-done' : ''}" data-id="${esc(task.id)}">
       <button type="button" class="check" data-action="complete" aria-label="${esc(task.title)} 완료"
         ${task.done ? 'disabled' : ''}>
-        <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path fill="currentColor" d="M9.5 16.2 5.3 12l-1.4 1.4 5.6 5.6 11-11-1.4-1.4z"/></svg>
+        <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m6 12.5 4 4 8-9"/></svg>
       </button>
       <button type="button" class="task-body" data-action="edit">
         <span class="task-title">${esc(task.title)}</span>
         <span class="task-meta">${meta}</span>
       </button>
+      ${task.assignee ? person(task.assignee) : ''}
     </li>`;
 }
 
-const taskList = (tasks, today) => `<ul class="task-list">${tasks.map((t) => taskItem(t, today)).join('')}</ul>`;
+const taskList = (tasks, today, opts) => `<ul class="task-list">${tasks.map((t) => taskItem(t, today, opts)).join('')}</ul>`;
 
-function emptyState(emoji, title, text, withPreset = false) {
+const EMPTY_ICONS = {
+  home: '<path d="M4 11 12 4l8 7v8.5a.5.5 0 0 1-.5.5h-15a.5.5 0 0 1-.5-.5Z"/>',
+  done: '<circle cx="12" cy="12" r="8.5"/><path d="m8.5 12.2 2.4 2.4 4.6-5"/>',
+  person: '<circle cx="12" cy="8.5" r="3.5"/><path d="M5 19.5c1.2-3.3 3.8-5 7-5s5.8 1.7 7 5"/>',
+};
+
+function emptyState(icon, title, text, withPreset = false) {
   return `
     <div class="empty">
-      <div class="empty-emoji" aria-hidden="true">${emoji}</div>
+      <svg class="empty-icon" viewBox="0 0 24 24" width="40" height="40" aria-hidden="true" fill="none" stroke="currentColor"
+        stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">${EMPTY_ICONS[icon]}</svg>
       <p class="empty-title">${esc(title)}</p>
       <p>${esc(text)}</p>
       ${withPreset ? '<button type="button" class="btn primary" data-action="open-home">우리 집에 맞는 할 일 추천받기</button>' : ''}
@@ -229,12 +245,12 @@ function renderToday(today) {
   $('#today-count').textContent = due.length || '';
 
   if (state.tasks.length === 0) {
-    return emptyState('🏠', '아직 할 일이 없어요', '+ 버튼으로 직접 추가하거나, 집 구조에 맞는 추천을 받아 보세요.', true);
+    return emptyState('home', '아직 할 일이 없어요', '위의 + 버튼으로 직접 추가하거나, 집 구조에 맞는 추천을 받아 보세요.', true);
   }
   let html = '';
   if (overdue.length) html += `<h2 class="section-title warn">밀린 일 ${overdue.length}</h2>${taskList(overdue, today)}`;
   if (now.length) html += `<h2 class="section-title">오늘 ${now.length}</h2>${taskList(now, today)}`;
-  if (!due.length) html += emptyState('✨', '오늘 할 일 끝!', '깨끗한 집, 수고했어요.');
+  if (!due.length) html += emptyState('done', '오늘 할 일 끝!', '깨끗한 집, 수고했어요.');
   if (soon.length) html += `<h2 class="section-title muted">곧 할 일</h2>${taskList(soon, today)}`;
   return html;
 }
@@ -243,15 +259,15 @@ function renderAll(today) {
   const all = visible(state.tasks);
   if (!all.length) {
     return state.tasks.length
-      ? emptyState('🙌', '내 담당 할 일이 없어요', '"내 것만"을 끄면 가족 모두의 할 일이 보여요.')
-      : emptyState('🏠', '아직 할 일이 없어요', '+ 버튼으로 추가해 보세요.', true);
+      ? emptyState('person', '내 담당 할 일이 없어요', '"내 것만"을 끄면 가족 모두의 할 일이 보여요.')
+      : emptyState('home', '아직 할 일이 없어요', '위의 + 버튼으로 추가해 보세요.', true);
   }
   const active = all.filter((t) => !t.done);
   const done = all.filter((t) => t.done);
   let html = '';
   for (const area of areas()) {
     const items = active.filter((t) => t.area === area).sort((a, b) => a.due.localeCompare(b.due));
-    if (items.length) html += `<h2 class="section-title">${esc(area)} <span class="muted">${items.length}</span></h2>${taskList(items, today)}`;
+    if (items.length) html += `<h2 class="section-title">${esc(area)} <span class="muted">${items.length}</span></h2>${taskList(items, today, { showArea: false })}`;
   }
   if (done.length) {
     html += `<h2 class="section-title muted">완료한 일회성 할 일
@@ -264,9 +280,9 @@ function renderHistory(today) {
   const scores = weeklyScores(state.logs, state.family.members, today);
   const max = Math.max(1, ...scores.map((s) => s.count));
   const scoreHtml = scores.map((s, i) => `
-    <li class="score">
-      <span class="score-name">${i === 0 && s.count > 0 ? '👑 ' : ''}${esc(s.name)}</span>
-      <span class="score-bar"><span style="width:${(s.count / max) * 100}%"></span></span>
+    <li class="score ${i === 0 && s.count > 0 ? 'is-top' : ''}">
+      <span class="score-name">${person(s.name)}${i === 0 && s.count > 0 ? '<span class="top-badge">1위</span>' : ''}</span>
+      <span class="score-bar" data-color="${memberColor(s.name)}"><span style="width:${(s.count / max) * 100}%"></span></span>
       <span class="score-count">${s.count}</span>
     </li>`).join('');
 
@@ -281,13 +297,13 @@ function renderHistory(today) {
       logHtml += `<h3 class="log-date">${label}</h3><ul class="log-list">`;
       lastDate = log.date;
     }
-    logHtml += `<li><strong>${esc(log.by)}</strong> · ${esc(log.title)} <span class="muted">${esc(log.area || '')}</span></li>`;
+    logHtml += `<li>${person(log.by)}<span class="log-title">${esc(log.title)}</span><span class="muted">${esc(log.area || '')}</span></li>`;
   }
   if (lastDate) logHtml += '</ul>';
 
   return `
     <h2 class="section-title">이번 주 청소왕</h2>
-    <ul class="score-list card">${scoreHtml}</ul>
+    <ul class="score-list">${scoreHtml}</ul>
     <h2 class="section-title">최근 기록</h2>
     ${logHtml || '<p class="muted pad">아직 기록이 없어요. 할 일을 체크하면 여기에 쌓여요.</p>'}`;
 }
@@ -559,7 +575,7 @@ function renderSettings() {
   $('#home-summary').textContent = homeSummary(state.family.home);
   $('#member-list').innerHTML = state.family.members.map((m) => `
     <li>
-      <span>${esc(m)}${m === state.me ? ' <span class="muted">(나)</span>' : ''}</span>
+      <span>${person(m)}${m === state.me ? ' <span class="muted">(나)</span>' : ''}</span>
       ${m === state.me ? '' : `<button type="button" class="link-btn" data-remove="${esc(m)}">빼기</button>`}
     </li>`).join('');
   $('#me-options').innerHTML = state.family.members.map((m) => `

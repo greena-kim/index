@@ -1,6 +1,6 @@
 // 앱 화면 파일을 캐시해서 오프라인에서도 열리게 한다.
 // 파일을 고친 뒤 배포할 때 VERSION 을 올리면 옛 캐시가 정리된다.
-const VERSION = 'v1';
+const VERSION = 'v2';
 const CACHE = `family-cleaning-${VERSION}`;
 const SHELL = [
   './',
