@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <rect width="512" height="512" rx="112" fill="#2f7d6d"/>
+  <!-- 집 -->
+  <path d="M256 104 92 236h44v160a16 16 0 0 0 16 16h208a16 16 0 0 0 16-16V236h44Z" fill="#f6f4ef"/>
+  <!-- 체크 -->
+  <path d="m186 306 50 50 94-104" fill="none" stroke="#2f7d6d" stroke-width="36" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- 반짝 -->
+  <path d="M400 92c6 24 14 32 38 38-24 6-32 14-38 38-6-24-14-32-38-38 24-6 32-14 38-38Z" fill="#ffd66b"/>
+</svg>

@@ -1,0 +1,237 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>우리집 청소</title>
+  <meta name="description" content="가족이 함께 쓰는 청소 할 일 목록" />
+  <meta name="theme-color" content="#2f7d6d" />
+
+  <!-- 안드로이드(삼성 인터넷·크롬) 설치용 -->
+  <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="icon" href="icons/icon.svg" type="image/svg+xml" />
+
+  <!-- 아이폰 '홈 화면에 추가' 용 -->
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-title" content="우리집 청소" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png" />
+
+  <link rel="stylesheet" href="styles.css" />
+  <script type="module" src="app.js"></script>
+</head>
+<body>
+  <div id="app">
+    <!-- 처음 화면: 가족 만들기 / 참여하기 -->
+    <section id="setup" class="setup" hidden>
+      <div class="setup-hero">
+        <div class="setup-logo" aria-hidden="true">🧹</div>
+        <h1>우리집 청소</h1>
+        <p>가족이 함께 보는 청소 할 일 목록</p>
+      </div>
+
+      <div class="segmented" role="tablist">
+        <button type="button" role="tab" data-setup-tab="create" aria-selected="true">새 가족 만들기</button>
+        <button type="button" role="tab" data-setup-tab="join" aria-selected="false">초대코드로 참여</button>
+      </div>
+
+      <form id="create-form" class="card form">
+        <label>우리 가족 이름
+          <input name="family" required maxlength="20" placeholder="예) 김씨네" autocomplete="off" />
+        </label>
+        <label>내 이름
+          <input name="me" required maxlength="10" placeholder="예) 엄마" autocomplete="off" />
+        </label>
+        <button class="btn primary" type="submit">시작하기</button>
+      </form>
+
+      <form id="join-form" class="card form" hidden>
+        <label>초대코드 (8자리)
+          <input name="code" required maxlength="11" placeholder="예) ABCD-2345" autocomplete="off"
+                 autocapitalize="characters" spellcheck="false" class="code-input" />
+        </label>
+        <label>내 이름
+          <input name="me" required maxlength="10" placeholder="예) 아빠" autocomplete="off" />
+        </label>
+        <button class="btn primary" type="submit">참여하기</button>
+      </form>
+
+      <p class="mode-note" data-mode-note></p>
+    </section>
+
+    <!-- 메인 화면 -->
+    <section id="main" hidden>
+      <header class="topbar">
+        <div>
+          <p class="eyebrow" id="today-label"></p>
+          <h1 id="family-name"></h1>
+        </div>
+        <button type="button" class="icon-btn" id="open-settings" aria-label="설정">
+          <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path fill="currentColor" d="M12 15.5A3.5 3.5 0 1 1 12 8.5a3.5 3.5 0 0 1 0 7Zm7.43-2.53a7.8 7.8 0 0 0 0-1.94l2.03-1.58a.5.5 0 0 0 .12-.64l-1.92-3.32a.5.5 0 0 0-.61-.22l-2.39.96a7.3 7.3 0 0 0-1.68-.97l-.36-2.54A.5.5 0 0 0 14.12 2h-3.84a.5.5 0 0 0-.49.42l-.36 2.54c-.6.24-1.17.56-1.68.97l-2.39-.96a.5.5 0 0 0-.61.22L2.83 8.51a.5.5 0 0 0 .12.64l2.03 1.58a7.8 7.8 0 0 0 0 1.94l-2.03 1.58a.5.5 0 0 0-.12.64l1.92 3.32c.13.22.39.3.61.22l2.39-.96c.51.4 1.08.73 1.68.97l.36 2.54c.04.24.25.42.49.42h3.84c.24 0 .45-.18.49-.42l.36-2.54c.6-.24 1.17-.56 1.68-.97l2.39.96c.22.08.48 0 .61-.22l1.92-3.32a.5.5 0 0 0-.12-.64l-2.03-1.58Z"/></svg>
+        </button>
+      </header>
+
+      <div class="demo-banner" id="demo-banner" hidden>
+        체험 모드 · 이 기기에만 저장돼요. 가족과 공유하려면 Firebase를 연결하세요.
+      </div>
+
+      <nav class="tabs" role="tablist">
+        <button type="button" role="tab" data-tab="today" aria-selected="true">오늘 <span class="badge" id="today-count"></span></button>
+        <button type="button" role="tab" data-tab="all" aria-selected="false">전체</button>
+        <button type="button" role="tab" data-tab="history" aria-selected="false">기록</button>
+      </nav>
+
+      <div class="filter-row" id="filter-row">
+        <button type="button" class="chip" id="mine-toggle" aria-pressed="false">내 것만</button>
+        <span class="me-label">나: <strong id="me-name"></strong></span>
+      </div>
+
+      <main id="view" aria-live="polite"></main>
+
+      <button type="button" class="fab" id="add-task" aria-label="할 일 추가">
+        <svg viewBox="0 0 24 24" width="28" height="28" aria-hidden="true"><path fill="currentColor" d="M11 5h2v6h6v2h-6v6h-2v-6H5v-2h6z"/></svg>
+      </button>
+    </section>
+  </div>
+
+  <!-- 할 일 추가/수정 -->
+  <dialog id="task-dialog" class="sheet">
+    <form method="dialog" id="task-form" class="form">
+      <h2 id="task-dialog-title">할 일 추가</h2>
+      <label>무엇을 할까요?
+        <input name="title" required maxlength="40" placeholder="예) 화장실 변기 청소" autocomplete="off" />
+      </label>
+      <fieldset>
+        <legend>장소</legend>
+        <div class="chip-group" id="area-options"></div>
+      </fieldset>
+      <div class="row">
+        <label>반복
+          <select name="repeat" id="repeat-select"></select>
+        </label>
+        <label>날짜
+          <input type="date" name="due" required />
+        </label>
+      </div>
+      <fieldset>
+        <legend>담당</legend>
+        <div class="chip-group" id="assignee-options"></div>
+      </fieldset>
+      <div class="sheet-actions">
+        <button type="button" class="btn danger ghost" id="delete-task" hidden>삭제</button>
+        <span class="spacer"></span>
+        <button type="button" class="btn ghost" data-close>취소</button>
+        <button type="submit" class="btn primary">저장</button>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- 우리 집 정보 → 청소·정리 프리셋 -->
+  <dialog id="home-dialog" class="sheet tall">
+    <form id="home-form" class="form" data-step="profile">
+      <div class="step" data-step-panel="profile">
+        <h2>우리 집 정보</h2>
+        <p class="hint">집 구조에 맞춰 청소·정리 할 일을 만들어 드려요. 나중에 설정에서 바꿀 수 있어요.</p>
+
+        <div class="counter-list">
+          <div class="counter" data-count="bathrooms">
+            <span class="counter-label">🛁 욕실</span>
+            <button type="button" class="step-btn" data-delta="-1" aria-label="욕실 줄이기">−</button>
+            <output>1</output>
+            <button type="button" class="step-btn" data-delta="1" aria-label="욕실 늘리기">+</button>
+          </div>
+          <div class="counter" data-count="balconies">
+            <span class="counter-label">🪟 베란다</span>
+            <button type="button" class="step-btn" data-delta="-1" aria-label="베란다 줄이기">−</button>
+            <output>1</output>
+            <button type="button" class="step-btn" data-delta="1" aria-label="베란다 늘리기">+</button>
+          </div>
+        </div>
+
+        <fieldset>
+          <legend>방 (용도별 개수)</legend>
+          <div class="counter-list" id="room-counters"></div>
+        </fieldset>
+
+        <fieldset>
+          <legend>그 밖에</legend>
+          <div class="chip-group" id="home-options"></div>
+        </fieldset>
+
+        <div class="sheet-actions">
+          <button type="button" class="btn ghost" data-close>건너뛰기</button>
+          <span class="spacer"></span>
+          <button type="button" class="btn primary" id="to-preview">다음</button>
+        </div>
+      </div>
+
+      <div class="step" data-step-panel="preview" hidden>
+        <h2>추천 할 일 <span class="muted" id="preset-count"></span></h2>
+        <p class="hint">필요 없는 건 체크를 빼 주세요. 추가한 뒤에도 언제든 고치거나 지울 수 있어요.</p>
+        <div id="preset-list" class="preset-list"></div>
+        <div class="sheet-actions">
+          <button type="button" class="btn ghost" id="back-to-profile">이전</button>
+          <span class="spacer"></span>
+          <button type="submit" class="btn primary" id="apply-preset">추가하기</button>
+        </div>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- 설정 -->
+  <dialog id="settings-dialog" class="sheet">
+    <div class="form">
+      <h2>설정</h2>
+
+      <section class="settings-block">
+        <h3>가족 초대코드</h3>
+        <p class="hint">가족에게 이 코드를 알려주면 같은 목록을 함께 쓸 수 있어요.</p>
+        <div class="code-box">
+          <span id="family-code"></span>
+          <button type="button" class="btn small" id="share-code">공유</button>
+        </div>
+      </section>
+
+      <section class="settings-block">
+        <h3>우리 집 정보</h3>
+        <p class="hint" id="home-summary">욕실·베란다·방 개수에 맞춰 청소·정리 할 일을 추천받을 수 있어요.</p>
+        <button type="button" class="btn small" id="open-home">집 정보·청소 프리셋</button>
+      </section>
+
+      <section class="settings-block">
+        <h3>가족 구성원</h3>
+        <ul class="member-list" id="member-list"></ul>
+        <form id="add-member-form" class="inline-form">
+          <input name="name" required maxlength="10" placeholder="이름 추가 (예: 막내)" autocomplete="off" />
+          <button type="submit" class="btn small">추가</button>
+        </form>
+      </section>
+
+      <section class="settings-block">
+        <h3>이 기기 사용자</h3>
+        <p class="hint">누가 체크했는지 기록할 때 쓰여요.</p>
+        <div class="chip-group" id="me-options"></div>
+      </section>
+
+      <section class="settings-block">
+        <h3>휴대폰에 앱처럼 설치하기</h3>
+        <p class="hint"><strong>아이폰</strong>: Safari에서 열고 하단 공유 버튼 → <em>홈 화면에 추가</em></p>
+        <p class="hint"><strong>갤럭시</strong>: 삼성 인터넷/크롬 메뉴(≡ 또는 ⋮) → <em>현재 페이지 추가 → 홈 화면</em> 또는 <em>앱 설치</em></p>
+        <button type="button" class="btn small" id="install-btn" hidden>지금 설치하기</button>
+      </section>
+
+      <div class="sheet-actions">
+        <button type="button" class="btn danger ghost" id="leave-family">이 기기에서 나가기</button>
+        <span class="spacer"></span>
+        <button type="button" class="btn primary" data-close>닫기</button>
+      </div>
+    </div>
+  </dialog>
+
+  <div class="toast" id="toast" role="status" hidden>
+    <span id="toast-text"></span>
+    <button type="button" id="toast-action" hidden></button>
+  </div>
+</body>
+</html>

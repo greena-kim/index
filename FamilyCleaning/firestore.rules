@@ -1,0 +1,46 @@
+rules_version = '2';
+
+// 가족 초대코드(문서 ID)를 아는 사람만 그 가족 데이터에 접근할 수 있다.
+// 목록 조회(list)를 막아서 다른 가족의 코드를 알아낼 수 없게 한다.
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function validCode(code) {
+      return code.matches('^[ABCDEFGHJKMNPQRSTUVWXYZ2-9]{8}$');
+    }
+
+    function familyExists(code) {
+      return exists(/databases/$(database)/documents/families/$(code));
+    }
+
+    match /families/{code} {
+      allow get: if signedIn();
+      allow list: if false;
+      allow create: if signedIn() && validCode(code)
+        && request.resource.data.name is string
+        && request.resource.data.members is list;
+      allow update: if signedIn()
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['name', 'members', 'home']);
+      allow delete: if false;
+
+      match /tasks/{taskId} {
+        allow get, list: if signedIn() && familyExists(code);
+        allow create, update: if signedIn() && familyExists(code)
+          && request.resource.data.title is string
+          && request.resource.data.title.size() <= 100;
+        allow delete: if signedIn() && familyExists(code);
+      }
+
+      match /logs/{logId} {
+        allow get, list: if signedIn() && familyExists(code);
+        allow create: if signedIn() && familyExists(code);
+        allow delete: if signedIn() && familyExists(code);
+        allow update: if false;
+      }
+    }
+  }
+}

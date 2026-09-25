@@ -1,0 +1,10 @@
+{
+  "name": "family-cleaning",
+  "private": true,
+  "type": "module",
+  "description": "가족이 함께 쓰는 청소 할 일 목록 (PWA)",
+  "scripts": {
+    "start": "python3 -m http.server 8080",
+    "test": "node --test tests/*.test.js"
+  }
+}
