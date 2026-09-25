@@ -73,6 +73,7 @@ FamilyCleaning/
 ├── sw.js                 오프라인용 서비스 워커
 ├── manifest.webmanifest  앱 이름·아이콘
 ├── icons/                앱 아이콘
+├── fonts/pretendard/     프리텐다드 v1.3.9 (SIL OFL 1.1, 글자 조각별로 필요한 것만 내려받음)
 ├── firestore.rules       Firestore 보안 규칙
 ├── firebase.json         Firebase 배포 설정
 └── tests/                node --test 단위 테스트

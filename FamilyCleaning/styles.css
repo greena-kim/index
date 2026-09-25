@@ -3,7 +3,7 @@
   --bg: #ffffff;
   --surface: #ffffff;
   --surface-2: #f5f6f8;
-  --text: #191b1f;
+  --text: #34373e;   /* 새까만 검정 대신 부드러운 차콜 */
   --muted: #8b9098;
   --line: #eceef1;
   --line-strong: #d9dce1;
@@ -29,13 +29,13 @@
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --bg: #111214;
-    --surface: #1a1b1e;
-    --surface-2: #222328;
-    --text: #eef0f2;
-    --muted: #8d929a;
-    --line: #26282d;
-    --line-strong: #34373d;
+    --bg: #1c1d21;
+    --surface: #25262b;
+    --surface-2: #2d2f35;
+    --text: #eceef1;
+    --muted: #979ca4;
+    --line: #2f3137;
+    --line-strong: #3d4047;
 
     --coral: #ff7d70;
     --coral-strong: #ff7d70;
@@ -48,7 +48,7 @@
     --sky-soft: #15293a;
     --sky-text: #8acfff;
 
-    --on-accent: #1a0f0d;
+    --on-accent: #3b1c18;
     color-scheme: dark;
   }
 }
@@ -60,8 +60,8 @@ body {
   margin: 0;
   background: var(--bg);
   color: var(--text);
-  font-family: -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Pretendard", "Noto Sans KR",
-    "Malgun Gothic", system-ui, sans-serif;
+  font-family: "Pretendard Variable", Pretendard, -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo",
+    "Noto Sans KR", "Malgun Gothic", system-ui, sans-serif;
   font-size: 16px;
   line-height: 1.45;
   letter-spacing: -0.01em;
@@ -338,7 +338,7 @@ dialog h2 { margin: 0; font-size: 20px; font-weight: 700; letter-spacing: -0.03e
   bottom: calc(var(--safe-bottom) + var(--tabbar-h) + 12px);
   max-width: 520px; margin: 0 auto;
   display: flex; align-items: center; gap: 12px;
-  background: #191b1f; color: #fff; border-radius: 12px; padding: 12px 12px 12px 16px;
+  background: #3a3d44; color: #fff; border-radius: 12px; padding: 12px 12px 12px 16px;
   box-shadow: 0 8px 24px rgb(0 0 0 / 0.18); font-size: 14px;
 }
 .toast span { flex: 1; }

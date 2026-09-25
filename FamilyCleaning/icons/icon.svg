@@ -1,7 +1,7 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
   <rect width="512" height="512" rx="112" fill="#ffffff"/>
   <!-- 집 (선) -->
-  <path d="M120 238 256 124l136 114v146a24 24 0 0 1-24 24H144a24 24 0 0 1-24-24Z" fill="none" stroke="#191b1f" stroke-width="28" stroke-linejoin="round"/>
+  <path d="M120 238 256 124l136 114v146a24 24 0 0 1-24 24H144a24 24 0 0 1-24-24Z" fill="none" stroke="#34373e" stroke-width="28" stroke-linejoin="round"/>
   <!-- 체크 (코랄) -->
   <path d="m194 300 44 44 84-92" fill="none" stroke="#ff6f61" stroke-width="32" stroke-linecap="round" stroke-linejoin="round"/>
   <!-- 반짝 (옐로우) · 물방울 점 (하늘) -->
